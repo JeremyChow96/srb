@@ -36,6 +36,7 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
     @Resource
     private DictMapper dictMapper;
 
+
     @Resource
     private RedisTemplate redisTemplate;
 
@@ -77,7 +78,7 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
                 return dictList;
             }
         } catch (Exception e) {
-           log.error("redis服务器异常: " + ExceptionUtils.getStackTrace(e));
+            log.error("redis服务器异常: " + ExceptionUtils.getStackTrace(e));
         }
 
 
@@ -96,7 +97,7 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
         try {
             //将数据存入redis中
             log.info("将数据存入redis");
-            redisTemplate.opsForValue().set("srb:core:dictList:" + parentId,dictList,5, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set("srb:core:dictList:" + parentId, dictList, 5, TimeUnit.MINUTES);
         } catch (Exception e) {
             log.error("redis服务器异常: " + ExceptionUtils.getStackTrace(e));
         }
@@ -110,11 +111,35 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
     public List<Dict> findByDictCode(String dictCode) {
 
         QueryWrapper<Dict> dictQueryWrapper = new QueryWrapper<>();
-        dictQueryWrapper.eq("dict_code",dictCode);
+        dictQueryWrapper.eq("dict_code", dictCode);
         Dict dict = baseMapper.selectOne(dictQueryWrapper);
 
 
         return this.listByParentId(dict.getId());
+
+    }
+
+    @Override
+    public String getNameByParentDictCodeAndValue(String dictCode, Integer value) {
+        QueryWrapper<Dict> dictQueryWrapper = new QueryWrapper<>();
+        dictQueryWrapper.eq("dict_code",dictCode);
+        Dict parentId = baseMapper.selectOne(dictQueryWrapper);
+
+        if (parentId==null){
+            return  "";
+        }
+        dictQueryWrapper = new QueryWrapper<>();
+        dictQueryWrapper
+                .eq("parent_id",parentId.getId())
+                .eq("value",value);
+
+        Dict dict = baseMapper.selectOne(dictQueryWrapper);
+        if (dict==null) {
+            return  "";
+        }
+
+        return dict.getName();
+
 
     }
 
